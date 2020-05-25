@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Test</title>
+        <!-- Import TensorFlow.js -->
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+        <!-- Import tfjs-vis -->
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+
+    </head>
+
+    <body>
+    <!-- Affichage d'images -->
+
+    <!--
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            setTimeout(function (test = {{ dataTest|json_encode() }}) {
+                try{
+                    for( let i in test ){
+                        const arrayMoreValue = [];
+                        test[i].map(arr=> {
+                            arrayMoreValue.push(arr * 255);
+                            arrayMoreValue.push(arr * 255);
+                            arrayMoreValue.push(arr * 255);
+                            arrayMoreValue.push(255);
+                        });
+                        let transformArray = new Uint8Array(arrayMoreValue);
+                        let arrayTest = Uint8ClampedArray.from(transformArray);
+                        let image = new ImageData(arrayTest,28);
+                        let body = document.getElementsByTagName('body')[0];
+                        let canvas = document.createElement('canvas');
+                        canvas.width = 28;
+                        canvas.height = 28;
+                        body.appendChild(canvas);
+                        let ctx = canvas.getContext('2d');
+                        ctx.createImageData(image);
+                        ctx.putImageData(image, 0, 0);
+                    }
+                }catch (e) {
+                    console.log(e)
+                }
+            }
+        ,10));
+    </script>
+    -->
+    </body>
+</html>
