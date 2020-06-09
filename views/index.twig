@@ -5,48 +5,139 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Test</title>
-        <!-- Import TensorFlow.js -->
-        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
-        <!-- Import tfjs-vis -->
-        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+        <style>
+            #canvas{
+                transform: scale(20);
+                transform-origin: top left;
+            }
+        </style>
 
     </head>
 
-    <body>
-    <!-- Affichage d'images -->
+    <body onload="init()">
+        <div style="width: 100%; float: right;height:650px">
+            <canvas id="canvas" width="28" height="28">
 
-    <!--
-    <script>
-        document.addEventListener(
-            "DOMContentLoaded",
-            setTimeout(function (test = {{ dataTest|json_encode() }}) {
-                try{
-                    for( let i in test ){
-                        const arrayMoreValue = [];
-                        test[i].map(arr=> {
-                            arrayMoreValue.push(arr * 255);
-                            arrayMoreValue.push(arr * 255);
-                            arrayMoreValue.push(arr * 255);
-                            arrayMoreValue.push(255);
-                        });
-                        let transformArray = new Uint8Array(arrayMoreValue);
-                        let arrayTest = Uint8ClampedArray.from(transformArray);
-                        let image = new ImageData(arrayTest,28);
-                        let body = document.getElementsByTagName('body')[0];
-                        let canvas = document.createElement('canvas');
-                        canvas.width = 28;
-                        canvas.height = 28;
-                        body.appendChild(canvas);
-                        let ctx = canvas.getContext('2d');
-                        ctx.createImageData(image);
-                        ctx.putImageData(image, 0, 0);
-                    }
-                }catch (e) {
-                    console.log(e)
+            </canvas>
+        </div>
+        <input type="button" value="save" id="btn" onclick="save()" >
+        <input type="button" value="clear" id="clr" onclick="erase()" >
+
+        <p></p>
+        <script>
+            var canvas, ctx, flag = false,
+                prevX = 0,
+                currX = 0,
+                prevY = 0,
+                currY = 0,
+                dot_flag = false;
+
+            var x = "white",
+                y = 3;
+
+            function init() {
+                canvas = document.getElementById('canvas');
+                ctx = canvas.getContext("2d");
+                w = canvas.width;
+                h = canvas.height;
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 0, w, h);
+                canvas.addEventListener("mousemove", function (e) {
+                    findxy('move', e)
+                }, false);
+                canvas.addEventListener("mousedown", function (e) {
+                    findxy('down', e)
+                }, false);
+                canvas.addEventListener("mouseup", function (e) {
+                    findxy('up', e)
+                }, false);
+                canvas.addEventListener("mouseout", function (e) {
+                    findxy('out', e)
+                }, false);
+            }
+
+            function draw() {
+                ctx.beginPath();
+                ctx.moveTo(prevX/20, prevY/20);
+                ctx.lineTo(currX/20, currY/20);
+                ctx.strokeStyle = x;
+                ctx.lineWidth = y;
+                ctx.stroke();
+                ctx.closePath();
+            }
+
+            function erase() {
+                var m = confirm("Want to clear");
+                if (m) {
+                    ctx.clearRect(0, 0, w, h);
+                    canvas = document.getElementById('canvas');
+                    ctx = canvas.getContext("2d");
+                    w = canvas.width;
+                    h = canvas.height;
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(0, 0, w, h);
                 }
             }
-        ,10));
-    </script>
-    -->
+
+            function save() {
+                let dataImage = Uint8Array.from(ctx.getImageData(0, 0, 28, 28).data);
+                let arrayResult = [];
+                let tempResult = [];
+                dataImage.map((value, index, dataImage) => {
+                    if((index+1)%112 === 0){
+                        if(tempResult.length!== 0)
+                        {
+                            arrayResult.push(tempResult);
+                            tempResult = [];
+                        }
+                    }
+                    if((index)%4 === 0){
+                        tempResult.push((dataImage[index-2] > 0)? 1 : 0);
+                    }
+                });
+                fetch('http://localhost:3000/result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({data: arrayResult})
+                })
+                    .then((resp) => resp.json())
+                    .then(function(data) {
+                        document.getElementsByTagName('p')[0].innerHTML = data.result
+                    });
+            }
+
+            function findxy(res, e) {
+                if (res == 'down') {
+                    prevX = currX;
+                    prevY = currY;
+                    currX = e.clientX - canvas.offsetLeft;
+                    currY = e.clientY - canvas.offsetTop;
+
+                    flag = true;
+                    dot_flag = true;
+                    if (dot_flag) {
+                        ctx.beginPath();
+                        ctx.fillStyle = x;
+                        ctx.fillRect(currX, currY, 1, 1);
+                        ctx.closePath();
+                        dot_flag = false;
+                    }
+                }
+                if (res == 'up' || res == "out") {
+                    flag = false;
+                }
+                if (res == 'move') {
+                    if (flag) {
+                        prevX = currX;
+                        prevY = currY;
+                        currX = e.clientX - canvas.offsetLeft;
+                        currY = e.clientY - canvas.offsetTop;
+                        draw();
+                    }
+                }
+            }
+        </script>
     </body>
 </html>
