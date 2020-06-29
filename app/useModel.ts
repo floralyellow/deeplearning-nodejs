@@ -11,24 +11,4 @@ export class UseModel {
         testxs.dispose();
         return preds;
     }
-
-
-    static async showAccuracy(model : any, data : any) {
-        const [preds, labels] = UseModel.doPrediction(model, data);
-        //const classAccuracy = await tfvis.metrics.perClassAccuracy(labels, preds);
-        const container = {name: 'Accuracy', tab: 'Evaluation'};
-        //tfvis.show.perClassAccuracy(container, classAccuracy, classNames);
-
-        labels.dispose();
-    }
-
-    static async showConfusion(model : any, data : any) {
-        const [preds, labels] = UseModel.doPrediction(model, data);
-        //const confusionMatrix = await tfvis.metrics.confusionMatrix(labels, preds);
-        const container = {name: 'Confusion Matrix', tab: 'Evaluation'};
-        //tfvis.render.confusionMatrix(
-        //container, {values: confusionMatrix}, classNames);
-
-        labels.dispose();
-    }
 }
