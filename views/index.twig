@@ -1,143 +1,178 @@
 <!DOCTYPE html>
 <html lang="fr">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Test</title>
-        <style>
-            #canvas{
-                transform: scale(20);
-                transform-origin: top left;
-            }
-        </style>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+    <style>
+        #canvas {
+            transform: scale(20);
+            transform-origin: top left;
+        }
+    </style>
 
-    </head>
+</head>
 
-    <body onload="init()">
-        <div style="width: 100%; float: right;height:650px">
-            <canvas id="canvas" width="28" height="28">
+<body onload="init()" style="margin: 0;padding: 0">
+    <div style="width:100%;margin: 0;padding: 0">
+        <div style="width:80%;height: 100vh;background-color: floralwhite;
+            margin:0 auto;grid-template-columns:repeat(2, 1fr)">
+            <h1 style="
+                margin: 0;
+                text-align: center;
+                font-family: 'Poppins', sans-serif;
+                padding: 15px 0;">
+                Reconnaissance caractère numérique
+            </h1>
+            <p style="padding: 0 20px;text-align: justify;font-family: 'Poppins', sans-serif">
+                dans le canvas ci-dessous un caractère entre 0 et 9 puis cliquez sur "Prédiction"
+                pour que la machine affiche le chiffre prédit. Vous pouvez aussi cliquer sur "Effacer"
+                pour redessiner sur le canvas et soumettre à nouveau.
+            </p>
+            <div style="width: 560px; margin : auto;height:560px">
+                <canvas id="canvas" width="28" height="28">
 
-            </canvas>
+                </canvas>
+            </div>
+            <div style="width: 100%;display :grid;grid-gap: 10px;padding: 15px 0">
+                <input type="button" value="save" id="btn"
+                       style="background-color: darkblue;
+                            grid-column: 1 / 2;
+                            grid-row: 1;
+                            color:white;
+                            border:none;
+                            border-radius: 15px;
+                            float: left;
+                            margin:5px 10px"
+                       onclick="save()">
+                <input type="button" value="clear" id="clr"
+                       style="background-color: brown;
+                           grid-row: 1;
+                           color:white;
+                           border:none;
+                           border-radius: 15px;
+                           margin:5px 10px"
+                       onclick="erase()">
+
+            </div>
+            <p style="width: 100%"></p>
         </div>
-        <input type="button" value="save" id="btn" onclick="save()" >
-        <input type="button" value="clear" id="clr" onclick="erase()" >
 
-        <p></p>
-        <script>
-            var canvas, ctx, flag = false,
-                prevX = 0,
-                currX = 0,
-                prevY = 0,
-                currY = 0,
-                dot_flag = false;
+    </div>
+    <script>
+        var canvas, ctx, flag = false,
+            prevX = 0,
+            currX = 0,
+            prevY = 0,
+            currY = 0,
+            dot_flag = false;
 
-            var x = "white",
-                y = 3;
+        var x = "white",
+            y = 3;
 
-            function init() {
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext("2d");
+            w = canvas.width;
+            h = canvas.height;
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, w, h);
+            canvas.addEventListener("mousemove", function (e) {
+                findxy('move', e)
+            }, false);
+            canvas.addEventListener("mousedown", function (e) {
+                findxy('down', e)
+            }, false);
+            canvas.addEventListener("mouseup", function (e) {
+                findxy('up', e)
+            }, false);
+            canvas.addEventListener("mouseout", function (e) {
+                findxy('out', e)
+            }, false);
+        }
+
+        function draw() {
+            ctx.beginPath();
+            ctx.moveTo(prevX / 20, prevY / 20);
+            ctx.lineTo(currX / 20, currY / 20);
+            ctx.strokeStyle = x;
+            ctx.lineWidth = y;
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function erase() {
+            var m = confirm("Want to clear");
+            if (m) {
+                ctx.clearRect(0, 0, w, h);
                 canvas = document.getElementById('canvas');
                 ctx = canvas.getContext("2d");
                 w = canvas.width;
                 h = canvas.height;
                 ctx.fillStyle = "black";
                 ctx.fillRect(0, 0, w, h);
-                canvas.addEventListener("mousemove", function (e) {
-                    findxy('move', e)
-                }, false);
-                canvas.addEventListener("mousedown", function (e) {
-                    findxy('down', e)
-                }, false);
-                canvas.addEventListener("mouseup", function (e) {
-                    findxy('up', e)
-                }, false);
-                canvas.addEventListener("mouseout", function (e) {
-                    findxy('out', e)
-                }, false);
             }
+        }
 
-            function draw() {
-                ctx.beginPath();
-                ctx.moveTo(prevX/20, prevY/20);
-                ctx.lineTo(currX/20, currY/20);
-                ctx.strokeStyle = x;
-                ctx.lineWidth = y;
-                ctx.stroke();
-                ctx.closePath();
-            }
+        function save() {
+            let dataImage = Uint8Array.from(ctx.getImageData(0, 0, 28, 28).data);
+            let arrayResult = [];
+            let tempResult = [];
+            dataImage.map((value, index, dataImage) => {
+                if ((index + 1) % 112 === 0) {
+                    if (tempResult.length !== 0) {
+                        arrayResult.push(tempResult);
+                        tempResult = [];
+                    }
+                }
+                if ((index) % 4 === 0) {
+                    tempResult.push((dataImage[index - 2] > 0) ? 1 : 0);
+                }
+            });
+            fetch('http://localhost:3000/result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({data: arrayResult})
+            })
+                .then((resp) => resp.json())
+                .then(function (data) {
+                    document.getElementsByTagName('p')[0].innerHTML = data.result
+                });
+        }
 
-            function erase() {
-                var m = confirm("Want to clear");
-                if (m) {
-                    ctx.clearRect(0, 0, w, h);
-                    canvas = document.getElementById('canvas');
-                    ctx = canvas.getContext("2d");
-                    w = canvas.width;
-                    h = canvas.height;
-                    ctx.fillStyle = "black";
-                    ctx.fillRect(0, 0, w, h);
+        function findxy(res, e) {
+            if (res == 'down') {
+                prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+
+                flag = true;
+                dot_flag = true;
+                if (dot_flag) {
+                    ctx.beginPath();
+                    ctx.fillStyle = x;
+                    ctx.fillRect(currX, currY, 1, 1);
+                    ctx.closePath();
+                    dot_flag = false;
                 }
             }
-
-            function save() {
-                let dataImage = Uint8Array.from(ctx.getImageData(0, 0, 28, 28).data);
-                let arrayResult = [];
-                let tempResult = [];
-                dataImage.map((value, index, dataImage) => {
-                    if((index+1)%112 === 0){
-                        if(tempResult.length!== 0)
-                        {
-                            arrayResult.push(tempResult);
-                            tempResult = [];
-                        }
-                    }
-                    if((index)%4 === 0){
-                        tempResult.push((dataImage[index-2] > 0)? 1 : 0);
-                    }
-                });
-                fetch('http://localhost:3000/result', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({data: arrayResult})
-                })
-                    .then((resp) => resp.json())
-                    .then(function(data) {
-                        document.getElementsByTagName('p')[0].innerHTML = data.result
-                    });
+            if (res == 'up' || res == "out") {
+                flag = false;
             }
-
-            function findxy(res, e) {
-                if (res == 'down') {
+            if (res == 'move') {
+                if (flag) {
                     prevX = currX;
                     prevY = currY;
                     currX = e.clientX - canvas.offsetLeft;
                     currY = e.clientY - canvas.offsetTop;
-
-                    flag = true;
-                    dot_flag = true;
-                    if (dot_flag) {
-                        ctx.beginPath();
-                        ctx.fillStyle = x;
-                        ctx.fillRect(currX, currY, 1, 1);
-                        ctx.closePath();
-                        dot_flag = false;
-                    }
-                }
-                if (res == 'up' || res == "out") {
-                    flag = false;
-                }
-                if (res == 'move') {
-                    if (flag) {
-                        prevX = currX;
-                        prevY = currY;
-                        currX = e.clientX - canvas.offsetLeft;
-                        currY = e.clientY - canvas.offsetTop;
-                        draw();
-                    }
+                    draw();
                 }
             }
-        </script>
-    </body>
+        }
+    </script>
+</body>
 </html>
